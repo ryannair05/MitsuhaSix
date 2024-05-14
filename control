@@ -1,0 +1,10 @@
+Package: com.ryannair05.mitsuha6
+Name: Mitsuha 6
+Depends: mobilesubstrate, preferenceloader, com.ryannair05.libmitsuha6, ws.hbang.alderis, firmware (>=15.0)
+Replaces: io.c0ldra1n.mitsuha, io.ominousness.mitsuhaxi, me.nepeta.mitsuhainfinity, com.ryannair05.mitsuhaforever
+Architecture: iphoneos-arm
+Description: Universal audio visualizer for iOS
+Maintainer: Ryan Nair
+Author: Ryan Nair
+Section: Tweaks
+Version: 1.0.0

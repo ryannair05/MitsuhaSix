@@ -1,0 +1,10 @@
+{
+    entry = {
+	bundle = MitsuhaSixPrefs;
+	cell = PSLinkCell;
+	detail = MSHFPrefsListController;
+	icon = icon.png;
+	isController = 1;
+	label = "Mitsuha 6";
+    };
+}
