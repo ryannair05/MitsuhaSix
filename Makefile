@@ -1,9 +1,11 @@
+THEOS_DEVICE_IP = 192.168.1.177
+
 export THEOS_PACKAGE_SCHEME=rootless
 
 FINALPACKAGE = 1
 
-export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc -Wno-module-import-in-extern-c
-export TARGET = iphone:17.0.2:15.0
+export ADDITIONAL_CFLAGS = -DTHEOS_LEAN_AND_MEAN -fobjc-arc -fno-ptrauth-objc-class-ro
+export TARGET = iphone:26.5:15.0
 
 include $(THEOS)/makefiles/common.mk
 

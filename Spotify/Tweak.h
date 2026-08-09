@@ -8,6 +8,7 @@
 
 #import <MitsuhaForever/MSHFConfig.h>
 #import <AVKit/AVKit.h>
+#import <objc/runtime.h>
 
 @interface SPTNowPlayingCoverArtImageView : UIImageView
 -(void)setImage:(UIImage *)image;

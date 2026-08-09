@@ -1,6 +1,5 @@
 #import "Tweak.h"
 #import <MediaRemote/MediaRemote.h>
-#import <notify.h>
 
 static MSHFConfig *mshConfig;
 
@@ -21,11 +20,15 @@ static MSHFConfig *mshConfig;
 %hook SBIconController
 
 %property (strong,nonatomic) MSHFView *mshfView;
+%property (assign,nonatomic) BOOL mshfSurfaceVisible;
 
 -(void)viewDidLoad {
     %orig;
-    if (![mshConfig view]) 
+    if (![mshConfig view]) {
         self.mshfView = [mshConfig initializeViewWithFrame:self.view.bounds];
+    } else {
+        self.mshfView = [mshConfig view];
+    }
     
     [[self view] insertSubview:self.mshfView atIndex:1];
 
@@ -38,33 +41,47 @@ static MSHFConfig *mshConfig;
 
 -(void)viewIsAppearing:(BOOL)animated {
     %orig;
-    [self.mshfView start];
+    if (!self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = YES;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, YES);
+    }
 }
 
 -(void)viewWillDisappear:(BOOL)animated {
     %orig;
-    [self.mshfView stop];
+    if (self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = NO;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, NO);
+    }
+}
+
+-(void)dealloc {
+    if (self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = NO;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, NO);
+    }
+    %orig;
 }
 
 %end
 
-static void screenDisplayStatus(CFNotificationCenterRef center, void* o, CFStringRef name, const void* object, CFDictionaryRef userInfo) {
-    [[mshConfig view] stop];
-}
-
-static void loadPrefs() {
+static void loadPrefs(CFNotificationCenterRef center, void *observer,
+                      CFStringRef name, const void *object,
+                      CFDictionaryRef userInfo) {
     [mshConfig reload];
 }
 
 %ctor{
-    mshConfig = [[MSHFConfig alloc] initWithAppName:@"HomeScreen"];
     %init(SBMediaHook);
 
-    if(mshConfig.enabled){
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)screenDisplayStatus, CFSTR("com.apple.iokit.hid.displayStatus"), NULL, (CFNotificationSuspensionBehavior)kNilOptions);
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.ryannair05.mitsuhasix/ReloadPrefs"), NULL, CFNotificationSuspensionBehaviorCoalesce);
-        
-        %init;
+    mshConfig = [[MSHFConfig alloc] initWithAppName:@"HomeScreen"];
+    if (!mshConfig.enabled) {
+        return;
     }
-
+    MSHFStartSpringBoardPlaybackCoordinator();
+    CFNotificationCenterAddObserver(
+        CFNotificationCenterGetDarwinNotifyCenter(), NULL, loadPrefs,
+        CFSTR("com.ryannair05.mitsuhasix/ReloadPrefs"), NULL,
+        CFNotificationSuspensionBehaviorCoalesce);
+    %init;
 }

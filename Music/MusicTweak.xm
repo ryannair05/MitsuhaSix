@@ -1,4 +1,5 @@
 #import "Tweak.h"
+#import <rootless.h>
 
 static MSHFConfig *config = NULL;
 static bool colorflow;
@@ -119,11 +120,9 @@ static bool colorflow;
     config.waveOffsetOffset = 70;
     if (config.enabled) {
         if ([%c(ChromaFlowColorManager) class]) {
-            #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-                NSDictionary const *prefs = [[NSDictionary alloc] initWithContentsOfFile:@"/var/jb/var/mobile/Library/Preferences/com.ryannair05.chromaflow.plist"];
-            #else
-                NSDictionary const *prefs = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.ryannair05.chromaflow.plist"];
-            #endif
+            NSDictionary const *prefs = [[NSDictionary alloc]
+                initWithContentsOfFile:ROOT_PATH_NS(
+                    @"/var/mobile/Library/Preferences/com.ryannair05.chromaflow.plist")];
             if ([[prefs objectForKey:@"colorMusic"]?:@TRUE boolValue]) {
                 colorflow = TRUE;
             }

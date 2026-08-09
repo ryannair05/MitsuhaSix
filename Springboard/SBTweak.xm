@@ -1,6 +1,5 @@
 #import "Tweak.h"
 #import <MediaRemote/MediaRemote.h>
-#import <notify.h>
 #import <dlfcn.h>
 #import <objc/runtime.h>
 
@@ -31,12 +30,16 @@ static MSHFConfig *SBLSconfig = NULL;
 %hook MRUCoverSheetViewController
 
 %property (retain,nonatomic) MSHFView *mshfView;
+%property (assign,nonatomic) BOOL mshfSurfaceVisible;
 
 -(void)viewDidLoad {
     %orig;
 
-    if (![SBconfig view]) 
+    if (![SBconfig view]) {
         self.mshfView = [SBconfig initializeViewWithFrame:CGRectZero];
+    } else {
+        self.mshfView = [SBconfig view];
+    }
 
     [self.view insertSubview:self.mshfView atIndex:0];
 
@@ -68,34 +71,27 @@ static MSHFConfig *SBLSconfig = NULL;
 }
 
 -(void)dealloc {
+    if (self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = NO;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, NO);
+    }
     [self.nowPlayingViewController.artworkView removeObserver:self forKeyPath:@"artworkImage"];
     %orig;
 }
 
 -(void)viewIsAppearing:(BOOL)animated {
     %orig;
-    [[SBconfig view] start];
+    if (!self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = YES;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, YES);
+    }
 }
 
 -(void)viewDidDisappear:(BOOL)animated{
     %orig;
-    [[SBconfig view] stop];
-}
-
-- (void)didReceiveInteraction:(MediaControlsInteractionRecognizer *)arg1 {
-    %orig;
-    
-    if (arg1.state == UIGestureRecognizerStateEnded) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.25 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            if ([[%c(SBMediaController) sharedInstance] isPlaying]) {
-                [[SBconfig view] start];
-                [[SBLSconfig view] start];
-            }
-            else {
-                [[SBconfig view] stop];
-                [[SBLSconfig view] start];
-            }
-        });
+    if (self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = NO;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, NO);
     }
 }
 %end
@@ -107,11 +103,15 @@ static MSHFConfig *SBLSconfig = NULL;
 %hook CSFixedFooterViewController
 
 %property (strong,nonatomic) MSHFView *mshfView;
+%property (assign,nonatomic) BOOL mshfSurfaceVisible;
 
 -(void)viewDidLoad {
     %orig;
-    if (![SBLSconfig view]) 
+    if (![SBLSconfig view]) {
         self.mshfView = [SBLSconfig initializeViewWithFrame:CGRectZero];
+    } else {
+        self.mshfView = [SBLSconfig view];
+    }
     
     [self.view insertSubview:self.mshfView atIndex:0];
     
@@ -124,65 +124,52 @@ static MSHFConfig *SBLSconfig = NULL;
 
 -(void)viewWillAppear:(BOOL)animated{
     %orig;
-    [self.mshfView start];
+    if (!self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = YES;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, YES);
+    }
 }
 
 -(void)viewDidDisappear:(BOOL)animated{
     %orig;
-    [self.mshfView stop];
+    if (self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = NO;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, NO);
+    }
+}
+
+-(void)dealloc {
+    if (self.mshfSurfaceVisible) {
+        self.mshfSurfaceVisible = NO;
+        MSHFSetSpringBoardSurfaceVisible(self.mshfView, NO);
+    }
+    %orig;
 }
 
 %end
 
 %end
-
-static void screenDisplayStatus(CFNotificationCenterRef center, void* o, CFStringRef name, const void* object, CFDictionaryRef userInfo) {
-    uint64_t state;
-    if ([[%c(SBMediaController) sharedInstance] isPlaying]) {
-        int token;
-        notify_register_check("com.apple.iokit.hid.displayStatus", &token);
-        notify_get_state(token, &state);
-        notify_cancel(token);
-    }
-    else {
-        state = false;
-    }
-    if (SBLSconfig.enabled) {
-        if (state) {
-            [[SBLSconfig view] start];
-        } else {
-            [[SBLSconfig view] stop];
-        }
-    }
-    if (SBconfig.enabled) {
-        if (state) {
-            [[SBconfig view] start];
-        } else {
-            [[SBconfig view] stop];
-        }
-    }
-}
 
 %ctor{
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)screenDisplayStatus, (CFStringRef)@"com.apple.iokit.hid.displayStatus", NULL, (CFNotificationSuspensionBehavior)kNilOptions);
-
-    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"com.ryannair05.mitsuhasix"];
     NSMutableDictionary *lockScreenPrefs = [[NSMutableDictionary alloc] init];
     NSMutableDictionary *springboardPrefs = [[NSMutableDictionary alloc] init];
     lockScreenPrefs[@"application"] = @"LockScreen";
     springboardPrefs[@"application"] = @"Springboard";
+    NSUserDefaults *defaults = [[NSUserDefaults alloc]
+        initWithSuiteName:@"com.ryannair05.mitsuhasix"];
     NSDictionary *allPrefs = [defaults dictionaryRepresentation];
     for (NSString *key in allPrefs) {
         if ([key hasPrefix:@"MSHFLockScreen"]) {
             NSString *newKey = [key substringFromIndex:14];
-            NSString *lowerCaseKey = [[[newKey substringToIndex:1] lowercaseString] stringByAppendingString:[newKey substringFromIndex:1]];
-
+            NSString *lowerCaseKey = [[[newKey substringToIndex:1]
+                lowercaseString]
+                stringByAppendingString:[newKey substringFromIndex:1]];
             lockScreenPrefs[lowerCaseKey] = allPrefs[key];
-        }
-        else if ([key hasPrefix:@"MSHFSpringboard"]) {
+        } else if ([key hasPrefix:@"MSHFSpringboard"]) {
             NSString *newKey = [key substringFromIndex:15];
-            NSString *lowerCaseKey = [[[newKey substringToIndex:1] lowercaseString] stringByAppendingString:[newKey substringFromIndex:1]];
-
+            NSString *lowerCaseKey = [[[newKey substringToIndex:1]
+                lowercaseString]
+                stringByAppendingString:[newKey substringFromIndex:1]];
             springboardPrefs[lowerCaseKey] = allPrefs[key];
         }
     }
@@ -190,14 +177,16 @@ static void screenDisplayStatus(CFNotificationCenterRef center, void* o, CFStrin
     SBLSconfig = [[MSHFConfig alloc] initWithDictionary:lockScreenPrefs];
     SBconfig = [[MSHFConfig alloc] initWithDictionary:springboardPrefs];
 
+    if (SBLSconfig.enabled || SBconfig.enabled) {
+        MSHFStartSpringBoardPlaybackCoordinator();
+    }
+
     if (SBLSconfig.enabled) {
         %init(ios13SBLS);
     }
-
-    if (SBconfig.enabled){
+    if (SBconfig.enabled) {
         %init(ios15SB);
-    }
-    else if (SBLSconfig.enabled && SBLSconfig.colorMode == 0) {
+    } else if (SBLSconfig.enabled && SBLSconfig.colorMode == 0) {
         %init(MitsuhaVisualsNotification);
     }
 }

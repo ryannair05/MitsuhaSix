@@ -1,6 +1,6 @@
 ARCHS = arm64 arm64e
 
-export TARGET = iphone:17.0.2:14.8
+export TARGET = iphone:16.5:15.0
 
 include $(THEOS_MAKE_PATH)/common.mk
 

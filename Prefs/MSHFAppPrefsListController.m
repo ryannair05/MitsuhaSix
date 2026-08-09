@@ -1,4 +1,5 @@
 #import "MSHFAppPrefsListController.h"
+#import <rootless.h>
 
 @implementation MSHFAppPrefsListController
 
@@ -91,7 +92,7 @@
 	[super viewDidAppear:animated];
     self.table.separatorColor = [UIColor colorWithWhite:0 alpha:0];
 
-    UIWindow *keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
+    UIWindow *keyWindow = self.view.window ?: self.navigationController.view.window;
 
     if ([keyWindow respondsToSelector:@selector(setTintColor:)]) {
         keyWindow.tintColor = [UIColor colorWithRed:238.0f / 255.0f
@@ -119,11 +120,10 @@
         }
     }
     else {
-        #ifdef THEOS_PACKAGE_INSTALL_PREFIX
-        NSString *path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Preferences/%@.plist", specifier.properties[@"defaults"]];
-        #else
-		NSString *path = [NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", specifier.properties[@"defaults"]];
-		#endif
+        NSString *unprefixedPath = [NSString stringWithFormat:
+            @"/var/mobile/Library/Preferences/%@.plist",
+            specifier.properties[@"defaults"]];
+        NSString *path = ROOT_PATH_NS(unprefixedPath);
         
         NSMutableDictionary *settings = [NSMutableDictionary dictionary];
         [settings addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:path]];

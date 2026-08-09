@@ -364,7 +364,7 @@
 			<key>min</key>
 			<real>5</real>
 			<key>max</key>
-			<real>120</real>
+			<real>60</real>
 			<key>showValue</key>
 			<true/>
 			<key>isSegmented</key>
@@ -464,9 +464,9 @@
 			<key>defaults</key>
 			<string>com.ryannair05.mitsuhasix</string>
 			<key>label</key>
-			<string>Keep Server Always Active</string>
+			<string>Keep Audio Capture Warm</string>
 			<key>key</key>
-			<string>DisableBatterySaver</string>
+			<string>KeepsAudioCaptureWarm</string>
 			<key>PostNotification</key>
 			<string>com.ryannair05.mitsuhasix/ReloadPrefs</string>
 		</dict>

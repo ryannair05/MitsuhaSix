@@ -28,7 +28,7 @@
         titleLabel.text = @"Mitsuha Six";
 
         UILabel *versionLabel = [self createLabelWithFontSize:18 weight:UIFontWeightRegular];
-        versionLabel.text = @"Version 1.0.0";
+        versionLabel.text = @"Version 2.0.0";
 
         UILabel *authorLabel = [self createLabelWithFontSize:12 weight:UIFontWeightLight];
         authorLabel.text = @"By Ryan Nair";
@@ -135,7 +135,7 @@
 
     self.table.separatorColor = [UIColor colorWithWhite:0 alpha:0];
 
-    UIWindow *keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
+    UIWindow *keyWindow = self.view.window ?: self.navigationController.view.window;
         
 	keyWindow.tintColor = [UIColor colorWithRed:238.0f / 255.0f
 											green:100.0f / 255.0f
@@ -151,14 +151,13 @@
 - (void)viewDidDisappear:(BOOL)animated {
 	[super viewDidDisappear:animated];
 
-	UIWindow *keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
+	UIWindow *keyWindow = self.view.window ?: self.navigationController.view.window;
 	keyWindow.tintColor = nil;
 }
 
 - (void)resetPrefs:(id)sender {	
 	NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"com.ryannair05.mitsuhasix"];
 	[defaults removePersistentDomainForName:@"com.ryannair05.mitsuhasix"];
-	[defaults synchronize];
 
     [self respring:sender];
 }
@@ -227,10 +226,9 @@
 		self.detailTextLabel.text = specifier.properties[@"subtitle"] ?: @"";
 		self.detailTextLabel.textColor = [UIColor secondaryLabelColor];
 
-		self.specifier = specifier;
-		if (self.shouldShowAvatar) {
-			NSLog(@"avatar? %i %@", self.shouldShowAvatar, self.specifier.properties);
-			CGFloat size = 29.f;
+			self.specifier = specifier;
+			if (self.shouldShowAvatar) {
+				CGFloat size = 29.f;
 
 			UIGraphicsBeginImageContextWithOptions(CGSizeMake(size, size), NO, [UIScreen mainScreen].scale);
 			specifier.properties[@"iconImage"] = UIGraphicsGetImageFromCurrentImageContext();

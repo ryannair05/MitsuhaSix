@@ -22,8 +22,14 @@ MSHFConfig *config = NULL;
 
     AVAssetImageGenerator* generator = [AVAssetImageGenerator assetImageGeneratorWithAsset:asset];
     generator.appliesPreferredTrackTransform = YES;
-    UIImage* image = [UIImage imageWithCGImage:[generator copyCGImageAtTime:CMTimeMake(0, 1) actualTime:nil error:nil]];
-    if (image) [config colorizeView:image];
+    CGImageRef copiedImage = [generator copyCGImageAtTime:CMTimeMake(0, 1)
+                                                actualTime:nil
+                                                     error:nil];
+    if (copiedImage) {
+        UIImage *image = [UIImage imageWithCGImage:copiedImage];
+        CGImageRelease(copiedImage);
+        [config colorizeView:image];
+    }
 }
 
 %end
@@ -64,19 +70,19 @@ MSHFConfig *config = NULL;
 -(void)viewDidLoad{
     %orig;
 
-    NSLog(@"[Mitsuha]: viewDidLoad");
-    
-    if (![config view]) [config initializeViewWithFrame:CGRectMake(0, config.waveOffset, self.view.bounds.size.width, self.view.bounds.size.height)];
-    self.mshfview = [config view];
-    [self.mshfview setUserInteractionEnabled:NO];
+    SPTNowPlayingViewController *controller =
+        (SPTNowPlayingViewController *)self;
+    if (![config view]) [config initializeViewWithFrame:CGRectMake(0, config.waveOffset, controller.view.bounds.size.width, controller.view.bounds.size.height)];
+    controller.mshfview = [config view];
+    [controller.mshfview setUserInteractionEnabled:NO];
 
-    [self.view insertSubview:self.mshfview atIndex:1];
+    [controller.view insertSubview:controller.mshfview atIndex:1];
 
-    self.mshfview.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.mshfview.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor].active = YES;
-    [self.mshfview.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
-    [self.mshfview.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor].active = YES;
-    [self.mshfview.heightAnchor constraintEqualToConstant:self.mshfview.frame.size.height].active = YES;
+    controller.mshfview.translatesAutoresizingMaskIntoConstraints = NO;
+    [controller.mshfview.leadingAnchor constraintEqualToAnchor:controller.view.leadingAnchor].active = YES;
+    [controller.mshfview.trailingAnchor constraintEqualToAnchor:controller.view.trailingAnchor].active = YES;
+    [controller.mshfview.bottomAnchor constraintEqualToAnchor:controller.view.bottomAnchor].active = YES;
+    [controller.mshfview.heightAnchor constraintEqualToConstant:controller.mshfview.frame.size.height].active = YES;
 
 }
 
@@ -120,8 +126,6 @@ static CGFloat originalCenterY = 0;
 -(void)viewWillAppear:(BOOL)animated{
     %orig;
     
-    NSLog(@"[Mitsuha]: originalCenterY: %lf", originalCenterY);
-    
     CGPoint center = self.view.coverArtView.center;
     
     self.view.coverArtView.alpha = 0;
@@ -130,8 +134,6 @@ static CGFloat originalCenterY = 0;
 
 -(void)viewDidAppear:(BOOL)animated{
     %orig;
-    
-    NSLog(@"[Mitsuha]: viewDidAppear");
     
     CGPoint center = self.view.coverArtView.center;
     
@@ -170,7 +172,14 @@ static CGFloat originalCenterY = 0;
     
     if(config.enabled){
         config.waveOffsetOffset = 520;
-        
-        %init(MitsuhaVisuals);
+
+        Class nowPlayingViewControllerClass =
+            objc_getClass("NowPlaying_ViewImpl.NowPlayingViewController");
+        if (!nowPlayingViewControllerClass) {
+            nowPlayingViewControllerClass =
+                objc_getClass("SPTNowPlayingViewController");
+        }
+        %init(MitsuhaVisuals,
+              SPTNowPlayingViewController = nowPlayingViewControllerClass);
     }
 }

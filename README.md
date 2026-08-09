@@ -33,7 +33,7 @@ If your device is not jailbroken, please refer to this link to get started: http
 
 ### Supported iOS versions and devices
 
-* Expected to be compatible with iPhone, iPad, and iPod touch running iOS 15.0 to 17.3. 
+* Expected to be compatible with iPhone, iPad, and iPod touch running iOS 15.0 to 26.5. 
 
 ## Bugs
 
@@ -42,8 +42,6 @@ For support / to report a bug you may open an issue here on Github. Crash logs a
 ##  Code contributions
 
 Pull requests are welcome! You can start by cloning this repo and build the tweak by using Theos: https://theos.dev/ 
-
-Note: If building for rootful, you will need to switch to a previous commit of Theos in order to properly compile. You can do this by running `git checkout 73aa9dd` in your theos folder
 
 ## Credits
 
